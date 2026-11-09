@@ -5,24 +5,43 @@ import { isEnvelope, SECTION_INDEX_ATTR, SECTION_TYPE_ATTR, wrap } from '../prot
 export type SectionOverlayOptions = {
   /** Origin of the Payload admin, e.g. `https://cms.client.com`. Required for security. */
   adminOrigin: string
+  /**
+   * Inject the default editor chrome styles. Set to `false` to style the `.psb-*`
+   * classes yourself. Default: `true`.
+   */
+  injectStyles?: boolean
 }
 
 const STYLE_ID = 'payload-section-builder-overlay-style'
 
+/**
+ * Editor chrome only (outlines, label, toolbar), never your site's sections.
+ * Colours and fonts are CSS variables, so a client project can restyle the chrome
+ * without touching the plugin, or pass `injectStyles: false` and style the
+ * `.psb-*` classes itself.
+ */
 const CSS = `
-.psb-box { position: fixed; pointer-events: none; z-index: 2147483000; border-radius: 4px; transition: opacity .12s; }
-.psb-hover { outline: 2px dashed #3b5bdb; outline-offset: -2px; }
-.psb-selected { outline: 2px solid #3b5bdb; outline-offset: -2px; box-shadow: 0 0 0 4px rgba(59,91,219,.18); }
-.psb-label { position: absolute; top: 0; left: 0; transform: translateY(-100%); background: #3b5bdb; color: #fff;
-  font: 600 12px/1 system-ui, sans-serif; padding: 5px 8px; border-radius: 4px 4px 0 0; white-space: nowrap; }
-.psb-toolbar { position: fixed; z-index: 2147483001; display: flex; gap: 2px; background: #1c2333; border-radius: 6px;
-  padding: 3px; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
-.psb-toolbar button { all: unset; cursor: pointer; color: #fff; font: 500 13px/1 system-ui, sans-serif;
-  padding: 6px 9px; border-radius: 4px; }
+:root {
+  --psb-accent: #3b5bdb;
+  --psb-accent-soft: rgba(59, 91, 219, .18);
+  --psb-on-accent: #fff;
+  --psb-toolbar-bg: #1c2333;
+  --psb-toolbar-fg: #fff;
+  --psb-focus: #91a7ff;
+  --psb-font: 500 13px/1 system-ui, sans-serif;
+  --psb-z: 2147483000;
+}
+.psb-box { position: fixed; pointer-events: none; z-index: var(--psb-z); border-radius: 4px; transition: opacity .12s; }
+.psb-hover { outline: 2px dashed var(--psb-accent); outline-offset: -2px; }
+.psb-selected { outline: 2px solid var(--psb-accent); outline-offset: -2px; box-shadow: 0 0 0 4px var(--psb-accent-soft); }
+.psb-label { position: absolute; top: 0; left: 0; transform: translateY(-100%); background: var(--psb-accent);
+  color: var(--psb-on-accent); font: var(--psb-font); font-weight: 600; padding: 5px 8px; border-radius: 4px 4px 0 0; white-space: nowrap; }
+.psb-toolbar { position: fixed; z-index: calc(var(--psb-z) + 1); display: flex; gap: 2px; background: var(--psb-toolbar-bg);
+  border-radius: 6px; padding: 3px; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.psb-toolbar button { all: unset; cursor: pointer; color: var(--psb-toolbar-fg); font: var(--psb-font); padding: 6px 9px; border-radius: 4px; }
 .psb-toolbar button:hover { background: rgba(255,255,255,.14); }
-.psb-toolbar button:focus-visible { outline: 2px solid #91a7ff; }
+.psb-toolbar button:focus-visible { outline: 2px solid var(--psb-focus); }
 .psb-toolbar button[disabled] { opacity: .35; cursor: default; }
-[data-section-builder="on"] [${SECTION_INDEX_ATTR}] { cursor: pointer; }
 `
 
 const humanize = (blockType: string) =>
@@ -33,7 +52,10 @@ const humanize = (blockType: string) =>
  * inside the Payload live preview AND the admin has answered the handshake.
  * Returns a cleanup function.
  */
-export function initSectionOverlay({ adminOrigin }: SectionOverlayOptions): () => void {
+export function initSectionOverlay({
+  adminOrigin,
+  injectStyles = true,
+}: SectionOverlayOptions): () => void {
   if (typeof window === 'undefined' || window.parent === window) {
     return () => {}
   }
@@ -118,7 +140,7 @@ export function initSectionOverlay({ adminOrigin }: SectionOverlayOptions): () =
     }
     active = true
     document.documentElement.dataset.sectionBuilder = 'on'
-    if (!document.getElementById(STYLE_ID)) {
+    if (injectStyles && !document.getElementById(STYLE_ID)) {
       document.head.append(style)
     }
     document.body.append(hoverBox, selectedBox, toolbar)
