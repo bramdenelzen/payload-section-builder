@@ -36,6 +36,14 @@ extra Next.js config:
 pnpm add github:bramdenelzen/payload-section-builder#main @payloadcms/live-preview-react
 ```
 
+pnpm 10 only runs a git dependency's build script when you allow it, so add this to the
+project's `package.json` (or `onlyBuiltDependencies` in `pnpm-workspace.yaml`). Without it the
+install fails with `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`:
+
+```json
+{ "pnpm": { "onlyBuiltDependencies": ["payload-section-builder"] } }
+```
+
 The lockfile pins the commit. Run `pnpm update payload-section-builder` to pull the latest
 `main`. To switch to npm later, replace the `github:` spec in `package.json` with a version
 range.
