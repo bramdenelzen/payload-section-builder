@@ -66,6 +66,14 @@ Not using React? Call `initSectionOverlay({ adminOrigin })` from `payload-sectio
 The `dev/` folder is a Payload + Next.js playground on SQLite (`dev/dev.db`, gitignored). It seeds a
 user (`dev@payloadcms.com` / `test`) and a Home page with four sections.
 
+Playground routes:
+
+| Route | Shows |
+| --- | --- |
+| `/` | The published page with slug `home` (`/home` redirects here) |
+| `/[slug]` | Any other published page. Draft-only pages return 404 until published. |
+| `/preview/[id]` | Live preview, by document id, including unpublished drafts |
+
 ```bash
 pnpm install
 pnpm dev              # http://localhost:3000/admin, open Pages > Home > Live Preview

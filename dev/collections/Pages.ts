@@ -8,7 +8,7 @@ export const Pages: CollectionConfig = {
   slug: 'pages',
   admin: {
     livePreview: {
-      url: ({ data }) => `${serverURL}/preview/${data?.slug ?? ''}`,
+      url: ({ data }) => `${serverURL}/preview/${data?.id ?? ''}`,
     },
     useAsTitle: 'title',
   },
