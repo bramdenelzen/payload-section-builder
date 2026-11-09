@@ -126,7 +126,10 @@ export interface UserAuthOperations {
 export interface Page {
   id: number;
   title: string;
-  slug: string;
+  /**
+   * The page URL. Leave empty to generate it from the title.
+   */
+  slug?: string | null;
   layout?:
     | (
         | {

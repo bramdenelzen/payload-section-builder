@@ -71,8 +71,8 @@ Playground routes:
 | Route | Shows |
 | --- | --- |
 | `/` | The published page with slug `home` (`/home` redirects here) |
-| `/[slug]` | Any other published page. Draft-only pages return 404 until published. |
-| `/preview/[id]` | Live preview, by document id, including unpublished drafts |
+| `/[slug]` | Any other published page. Draft-only pages return 404 in production; in development they show a "not published yet" message. |
+| `/preview/[id]` | Live preview, by document id, including unpublished drafts. Payload only shows the Live Preview button after a page has been saved once. |
 
 ```bash
 pnpm install
