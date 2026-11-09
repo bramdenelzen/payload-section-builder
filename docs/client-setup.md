@@ -28,6 +28,18 @@ The plugin ships no sections and no site CSS.
 pnpm add payload-section-builder @payloadcms/live-preview-react
 ```
 
+Until the package is on npm, install it from GitHub instead. The package builds itself on
+install (`prepare` script), so you get the same compiled `dist` as the npm version and need no
+extra Next.js config:
+
+```bash
+pnpm add github:bramdenelzen/payload-section-builder#main @payloadcms/live-preview-react
+```
+
+The lockfile pins the commit. Run `pnpm update payload-section-builder` to pull the latest
+`main`. To switch to npm later, replace the `github:` spec in `package.json` with a version
+range.
+
 ## 3. Define your sections
 
 A section is a normal Payload [block](https://payloadcms.com/docs/fields/blocks) plus a React
