@@ -1,0 +1,30 @@
+{
+  "extends": "../tsconfig.json",
+  "exclude": [],
+  "include": [
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.mjs",
+    "**/*.cjs",
+    "**/*.ts",
+    "**/*.tsx",
+    "../src/**/*.ts",
+    "../src/**/*.tsx",
+    "next.config.mjs",
+    ".next/types/**/*.ts"
+  ],
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@payload-config": [
+        "./payload.config.ts"
+      ],
+      "payload-section-builder": ["../src/index.ts"],
+      "payload-section-builder/client": ["../src/exports/client.ts"],
+      "payload-section-builder/overlay": ["../src/exports/overlay.ts"],
+      "payload-section-builder/react": ["../src/exports/react.ts"]
+    },
+    "noEmit": true,
+    "emitDeclarationOnly": false,
+  }
+}

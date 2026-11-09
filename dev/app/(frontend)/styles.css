@@ -1,0 +1,10 @@
+:root { --ink: #14161c; --muted: #5b6170; --bg: #fbfaf7; --brand: #0f766e; font-family: system-ui, sans-serif; }
+body { margin: 0; background: var(--bg); color: var(--ink); }
+section { padding: 72px 24px; }
+.inner { max-width: 760px; margin: 0 auto; }
+.hero { background: #e8f3f1; }
+.hero h1 { font-size: 44px; margin: 0 0 12px; }
+.hero p, .text p { color: var(--muted); font-size: 18px; line-height: 1.6; }
+.text h2, .cta h2 { font-size: 28px; margin: 0 0 10px; }
+.cta { background: var(--ink); color: #fff; text-align: center; }
+.button { display: inline-block; margin-top: 16px; background: var(--brand); color: #fff; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; }
