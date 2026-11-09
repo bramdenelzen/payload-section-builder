@@ -25,6 +25,9 @@ Payload admin (edit view)                     Preview iframe (your frontend)
 
 ## Usage
 
+**Full guide for client projects: [docs/client-setup.md](docs/client-setup.md)** (install, your own sections, preview route, styling, troubleshooting).
+
+
 ```ts
 // payload.config.ts
 import { sectionBuilder } from 'payload-section-builder'
@@ -51,6 +54,33 @@ import { sectionAttributes, SectionOverlay } from 'payload-section-builder/react
 ```
 
 Not using React? Call `initSectionOverlay({ adminOrigin })` from `payload-section-builder/overlay`.
+
+## Your sections, your styling
+
+The plugin ships **no sections and no site styles**. Each client project owns both:
+
+- **Sections** are ordinary Payload blocks in your own config. Use any fields you like.
+- **Rendering** is your own components with your own CSS, Tailwind or anything else.
+- **The only contract** is one spread on each section's root element: `{...sectionAttributes(index, block.blockType)}`.
+  This adds two `data-` attributes and changes nothing visually.
+
+The plugin only handles the editing bridge between the preview and the admin. The one thing it draws is
+the editor chrome (hover outline, selection outline, label and toolbar), and only inside the live preview.
+To match your brand, override its CSS variables:
+
+```css
+:root {
+  --psb-accent: #0f766e;
+  --psb-accent-soft: rgba(15, 118, 110, .2);
+  --psb-toolbar-bg: #111;
+  --psb-font: 500 13px/1 'Inter', sans-serif;
+}
+```
+
+You can also turn the default chrome styles off and style the `.psb-box`, `.psb-hover`, `.psb-selected`,
+`.psb-label` and `.psb-toolbar` classes yourself: `<SectionOverlay adminOrigin={url} injectStyles={false} />`.
+
+The sections in `dev/` exist only to exercise the plugin in the playground. They are not published.
 
 ## Entry points
 
