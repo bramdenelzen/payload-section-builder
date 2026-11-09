@@ -6,8 +6,13 @@ export type SectionBuilderCollectionOptions = {
 }
 
 export type SectionBuilderConfig = {
-  /** Collections that get the visual section builder, and which blocks field it drives. */
-  collections: Partial<Record<CollectionSlug, SectionBuilderCollectionOptions>>
+  /**
+   * Collections that get the visual section builder, and which blocks field it drives.
+   * Known slugs autocomplete; any string is accepted so the config still type-checks
+   * before `payload generate:types` has picked up a newly added collection.
+   */
+  collections: Partial<Record<CollectionSlug, SectionBuilderCollectionOptions>> &
+    Record<string, SectionBuilderCollectionOptions | undefined>
   /** Turns the editor off without changing the schema. */
   disabled?: boolean
   /**
