@@ -1,10 +1,10 @@
-import type { Payload } from 'payload'
+import type { Config, Payload } from 'payload'
 
 import config from '@payload-config'
 import { getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
-import { BRIDGE_FIELD_NAME, sectionBuilder } from '../src/index.js'
+import { BRIDGE_FIELD_NAME, findDataField, sectionBuilder } from '../src/index.js'
 
 let payload: Payload
 
@@ -37,5 +37,63 @@ describe('section builder plugin', () => {
         secret: 'x',
       } as never),
     ).toThrow(/must be a top-level blocks field/)
+  })
+})
+
+describe('blocks field lookup', () => {
+  const blocks = { name: 'layout', blocks: [], type: 'blocks' as const }
+
+  test('finds the field inside unnamed tabs, rows and collapsibles', () => {
+    expect(findDataField([blocks], 'layout')).toBe(blocks)
+    expect(
+      findDataField(
+        [
+          {
+            tabs: [
+              { fields: [], label: 'SEO' },
+              { fields: [blocks], label: 'Content' },
+            ],
+            type: 'tabs',
+          },
+        ],
+        'layout',
+      ),
+    ).toBe(blocks)
+    expect(findDataField([{ fields: [blocks], type: 'row' }], 'layout')).toBe(blocks)
+    expect(findDataField([{ fields: [blocks], label: 'X', type: 'collapsible' }], 'layout')).toBe(
+      blocks,
+    )
+  })
+
+  test('ignores named tabs and groups, which change the data path', () => {
+    expect(
+      findDataField([{ tabs: [{ name: 'content', fields: [blocks] }], type: 'tabs' }], 'layout'),
+    ).toBeUndefined()
+    expect(
+      findDataField([{ name: 'group', fields: [blocks], type: 'group' }], 'layout'),
+    ).toBeUndefined()
+  })
+
+  test('works after plugin-seo has moved the fields into a Content tab', () => {
+    const config = {
+      collections: [
+        {
+          fields: [
+            {
+              tabs: [
+                { fields: [blocks], label: 'Content' },
+                { fields: [], label: 'SEO' },
+              ],
+              type: 'tabs',
+            },
+          ],
+          slug: 'pages',
+        },
+      ],
+    } as unknown as Config
+    const result = sectionBuilder({ collections: { pages: { field: 'layout' } } })(config)
+    const fields = result.collections![0]!.fields
+    // The bridge sits at the top level, so it stays mounted on every tab.
+    expect(fields.some((f) => 'name' in f && f.name === BRIDGE_FIELD_NAME)).toBe(true)
   })
 })
