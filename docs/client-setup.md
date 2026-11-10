@@ -28,6 +28,9 @@ The plugin ships no sections and no site CSS.
 pnpm add payload-section-builder @payloadcms/live-preview-react
 ```
 
+Use version `0.0.1` or later. `0.0.0` was published with exports pointing at `src`, which isn't in
+the package, so imports fail with "Can't resolve 'payload-section-builder'".
+
 ## 3. Define your sections
 
 A section is a normal Payload [block](https://payloadcms.com/docs/fields/blocks) plus a React

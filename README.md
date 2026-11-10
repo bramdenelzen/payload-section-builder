@@ -113,6 +113,17 @@ pnpm test:e2e         # select and move a section in the browser (Playwright)
 pnpm build            # outputs dist/
 ```
 
+## Publishing
+
+```bash
+npm version patch     # or minor; commit and tag
+npm publish           # the prepare script builds dist first
+```
+
+`exports` already point at `dist`, so `npm publish` and `pnpm publish` produce the same package.
+Check what will ship with `npm pack --dry-run`: every entry point needs a `.js` and a `.d.ts` file
+in `dist/`.
+
 ## License
 
 MIT
