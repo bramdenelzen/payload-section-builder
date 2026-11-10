@@ -36,7 +36,7 @@ export default buildConfig({
   plugins: [
     sectionBuilder({
       collections: {
-        pages: { field: 'layout' }, // a top-level blocks field
+        pages: { field: 'layout' }, // a top-level blocks field (an unnamed tab is fine)
       },
     }),
   ],

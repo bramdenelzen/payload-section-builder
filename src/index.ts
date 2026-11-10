@@ -1,4 +1,4 @@
-import type { CollectionSlug, Config } from 'payload'
+import type { CollectionSlug, Config, Field } from 'payload'
 
 export type SectionBuilderCollectionOptions = {
   /** Name of the top-level blocks field that holds the sections, e.g. `layout`. */
@@ -26,6 +26,34 @@ export { sectionAttributes } from './protocol.js'
 
 export const BRIDGE_FIELD_NAME = '_sectionBuilderBridge'
 
+/**
+ * Finds a field whose data sits at the top level of the document: directly in `fields`, or
+ * inside layout-only containers (unnamed tabs, rows, collapsibles). Other plugins, such as
+ * plugin-seo with its tabbed UI, move existing fields into such a tab.
+ */
+export const findDataField = (fields: Field[], name: string): Field | undefined => {
+  for (const field of fields) {
+    if ('name' in field && field.name === name) {
+      return field
+    }
+    if (field.type === 'tabs') {
+      for (const tab of field.tabs) {
+        const found = 'name' in tab ? undefined : findDataField(tab.fields, name)
+        if (found) {
+          return found
+        }
+      }
+    }
+    if (field.type === 'row' || field.type === 'collapsible') {
+      const found = findDataField(field.fields, name)
+      if (found) {
+        return found
+      }
+    }
+  }
+  return undefined
+}
+
 export const sectionBuilder =
   (options: SectionBuilderConfig) =>
   (config: Config): Config => {
@@ -41,16 +69,17 @@ export const sectionBuilder =
       const collection = config.collections?.find((c) => c.slug === slug)
 
       if (!collection) {
-        throw new Error(`[section-builder] Collection "${slug}" was not found in the Payload config.`)
+        throw new Error(
+          `[section-builder] Collection "${slug}" was not found in the Payload config.`,
+        )
       }
 
-      const blocksField = collection.fields.find(
-        (field) => 'name' in field && field.name === collectionOptions.field,
-      )
+      const blocksField = findDataField(collection.fields, collectionOptions.field)
 
       if (!blocksField || blocksField.type !== 'blocks') {
         throw new Error(
-          `[section-builder] "${slug}.${collectionOptions.field}" must be a top-level blocks field.`,
+          `[section-builder] "${slug}.${collectionOptions.field}" must be a top-level blocks field ` +
+            '(it may sit in an unnamed tab, row or collapsible).',
         )
       }
 
