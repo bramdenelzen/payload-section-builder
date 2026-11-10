@@ -1,6 +1,6 @@
 {
   "name": "payload-section-builder",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Visual section builder for Payload CMS: select, edit and rearrange page sections from the live preview.",
   "license": "MIT",
   "type": "module",
