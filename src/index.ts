@@ -1,11 +1,21 @@
 import type { CollectionSlug, Config, Field } from 'payload'
 
+import { applyRevalidation, type CacheOptions } from './cache.js'
+
 export type SectionBuilderCollectionOptions = {
   /** Name of the top-level blocks field that holds the sections, e.g. `layout`. */
   field: string
+  /** Field with the URL slug, used for the cache tags. Default `slug`. */
+  slugField?: string
 }
 
 export type SectionBuilderConfig = {
+  /**
+   * Cache invalidation. When a document of these collections is published, unpublished,
+   * deleted or gets a new slug, its cache tags (see `cacheTags`) are revalidated, so cached
+   * pages update right away. On by default; `false` turns it off.
+   */
+  cache?: CacheOptions | false
   /**
    * Collections that get the visual section builder, and which blocks field it drives.
    * Known slugs autocomplete; any string is accepted so the config still type-checks
@@ -13,7 +23,7 @@ export type SectionBuilderConfig = {
    */
   collections: Partial<Record<CollectionSlug, SectionBuilderCollectionOptions>> &
     Record<string, SectionBuilderCollectionOptions | undefined>
-  /** Turns the editor off without changing the schema. */
+  /** Turns the editor and the cache invalidation off without changing the schema. */
   disabled?: boolean
   /**
    * Origin of the preview frontend, e.g. `https://www.client.com`. Messages are only
@@ -22,6 +32,12 @@ export type SectionBuilderConfig = {
   previewOrigin?: string
 }
 
+export {
+  type CacheCollectionOptions,
+  type CacheOptions,
+  cacheTags,
+  type RevalidateTag,
+} from './cache.js'
 export { sectionAttributes } from './protocol.js'
 
 export const BRIDGE_FIELD_NAME = '_sectionBuilderBridge'
@@ -102,5 +118,14 @@ export const sectionBuilder =
       })
     }
 
-    return config
+    if (options.cache === false) {
+      return config
+    }
+
+    const builderCollections = Object.fromEntries(
+      Object.entries(options.collections).flatMap(([slug, value]) =>
+        value ? [[slug, { slugField: value.slugField }]] : [],
+      ),
+    )
+    return applyRevalidation(config, builderCollections, options.cache ?? {})
   }
