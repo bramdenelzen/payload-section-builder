@@ -55,6 +55,24 @@ import { sectionAttributes, SectionOverlay } from 'payload-section-builder/react
 
 Not using React? Call `initSectionOverlay({ adminOrigin })` from `payload-section-builder/overlay`.
 
+### Cached pages that update on publish
+
+The plugin also keeps cached pages fresh. When a document of a builder collection is published,
+unpublished, deleted or renamed, it revalidates that document's cache tags (Next.js
+`revalidateTag`). Tag your cached reads with `cacheTags` and drop `force-dynamic`:
+
+```ts
+import { cacheTags } from 'payload-section-builder'
+
+unstable_cache(() => findPage(slug), ['page', slug], {
+  tags: [cacheTags.slug('pages', slug), cacheTags.collection('media')],
+})
+```
+
+Other collections or globals that pages show (images, redirects, a header) go in the `cache`
+option: `sectionBuilder({ cache: { collections: { media: true }, globals: ['header'] }, ... })`.
+See [docs/client-setup.md](docs/client-setup.md#8-add-public-routes-cached).
+
 ## Your sections, your styling
 
 The plugin ships **no sections and no site styles**. Each client project owns both:
@@ -86,7 +104,7 @@ The sections in `dev/` exist only to exercise the plugin in the playground. They
 
 | Import | Contents |
 | --- | --- |
-| `payload-section-builder` | `sectionBuilder()` plugin, `sectionAttributes()` |
+| `payload-section-builder` | `sectionBuilder()` plugin, `sectionAttributes()`, `cacheTags` |
 | `payload-section-builder/client` | `SectionBridge` admin component (referenced by the plugin) |
 | `payload-section-builder/overlay` | Framework-free `initSectionOverlay()` |
 | `payload-section-builder/react` | `<SectionOverlay />`, `sectionAttributes()` |

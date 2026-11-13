@@ -240,24 +240,86 @@ export function PreviewPage({ initialData, serverURL }: { initialData: Page; ser
 `SectionOverlay` renders nothing on its own. It only activates when the page is inside the Payload
 live preview **and** the admin answers its handshake, so it's safe on any page.
 
-## 8. Add public routes
+## 8. Add public routes (cached)
 
-Public pages show **published** content only.
+Public pages show **published** content only, and are cached: the database is queried once
+after each change, not on every visit. The plugin keeps the cache correct. When a document of a
+builder collection is published, unpublished, deleted or gets a new slug, it revalidates that
+document's cache tags, so the next visitor (usually the editor checking their change) gets the
+new version. Never use `export const dynamic = 'force-dynamic'` on public pages.
 
-```tsx
-// src/app/(frontend)/[slug]/page.tsx
-const { docs } = await payload.find({
-  collection: 'pages',
-  where: { and: [{ slug: { equals: slug } }, { _status: { equals: 'published' } }] },
-  limit: 1,
-})
-if (!docs[0]) notFound()
-return <RenderSections sections={docs[0].layout} />
+Tag every cached read with `cacheTags`:
+
+| Tag | Invalidated when |
+| --- | --- |
+| `cacheTags.slug('pages', slug)` | the page with this slug changes, or a page gets or loses this slug |
+| `cacheTags.doc('pages', id)` | that document changes |
+| `cacheTags.collection('pages')` | anything in the collection changes (lists, menus, sitemap) |
+| `cacheTags.global('header')` | the global changes (add it to `cache.globals`) |
+
+```ts
+// src/lib/getPage.ts
+import { unstable_cache } from 'next/cache'
+import { cacheTags } from 'payload-section-builder'
+
+export const getPublishedPage = (slug: string) =>
+  unstable_cache(
+    async () => {
+      const payload = await getPayload({ config })
+      const { docs } = await payload.find({
+        collection: 'pages',
+        depth: 1,
+        limit: 1,
+        where: { and: [{ slug: { equals: slug } }, { _status: { equals: 'published' } }] },
+      })
+      return docs[0] ?? null
+    },
+    ['page', slug],
+    // depth: 1 includes images, so media changes refresh the page too.
+    { tags: [cacheTags.slug('pages', slug), cacheTags.collection('media')] },
+  )()
 ```
 
-Serve the home page at `/` from `src/app/(frontend)/page.tsx` with the slug `home`. The playground
-in this repo (`dev/app/(frontend)`) has a complete version, including slug clean-up and a
-development-only message for draft pages.
+```tsx
+// src/app/(frontend)/[[...slug]]/page.tsx  (serves "/" as the page "home")
+export async function generateStaticParams() {
+  return [] // render each page on its first visit, then serve it from the cache (ISR)
+}
+
+export default async function Page({ params }: { params: Promise<{ slug?: string[] }> }) {
+  const { slug = ['home'] } = await params
+  const page = await getPublishedPage(slug[0]!)
+  if (!page) notFound()
+  return <RenderSections sections={page.layout} />
+}
+```
+
+Returning `[]` from `generateStaticParams` keeps the database out of `next build`, which matters
+for Docker builds. Things a page shows from other collections or globals (images, a header, a
+menu) need their tag too, and that collection or global in the plugin's `cache` option:
+
+```ts
+sectionBuilder({
+  cache: { collections: { media: true, redirects: true }, globals: ['header'] },
+  collections: { pages: { field: 'layout' } },
+})
+```
+
+Good to know:
+
+- The live preview route isn't affected: it reads the auth cookie, so it is rendered per request
+  and always shows the latest draft.
+- Saving a draft of a published page also invalidates its tags. The public still sees the
+  published version; it is just rendered again once.
+- The default uses Next.js `revalidateTag(tag, { expire: 0 })`. On Vercel the CDN follows it. On
+  Docker the cache lives in the Next.js server, which is correct for **one instance**. With more
+  instances, or a CDN that caches HTML in front of it, configure a shared
+  [cache handler](https://nextjs.org/docs/app/api-reference/config/next-config-js/incrementalCacheHandlerPath)
+  or pass your own `cache.revalidateTag`.
+- In `next dev` pages render on every request; data reads are still cached and invalidated the same way.
+
+The client starter ([payload-client-starter](https://github.com/bramdenelzen/payload-client-starter))
+has a complete version, including slug clean-up, redirects and the sitemap.
 
 ## 9. Environment variables
 
@@ -341,9 +403,17 @@ const stop = initSectionOverlay({ adminOrigin: 'https://cms.client.com' })
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `collections` | `{ [slug]: { field: string } }` | Collections that get the builder, and the name of their top-level blocks field |
+| `collections` | `{ [slug]: { field: string; slugField?: string } }` | Collections that get the builder, and the name of their top-level blocks field |
 | `previewOrigin` | `string?` | Origin of the preview site. Defaults to the origin of the loaded preview URL. |
-| `disabled` | `boolean?` | Turns the builder off without changing the schema |
+| `cache` | `CacheOptions \| false` | Cache invalidation, on by default. `collections`: extra collections to invalidate, e.g. `{ media: true }` (builder collections are always included). `globals`: globals to invalidate. `revalidateTag`: replaces the Next.js default. |
+| `disabled` | `boolean?` | Turns the builder and the cache invalidation off without changing the schema |
+
+The per-collection options also accept `slugField` (default `slug`), the field used for `cacheTags.slug`.
+
+### `cacheTags` from `payload-section-builder`
+
+`collection(slug)`, `doc(slug, id)`, `slug(collection, slug)` and `global(slug)` return the cache
+tags the plugin invalidates. See [step 8](#8-add-public-routes-cached).
 
 ### `<SectionOverlay />` from `payload-section-builder/react`
 
